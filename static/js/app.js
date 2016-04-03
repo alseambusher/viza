@@ -1,9 +1,9 @@
+var attributes = ["Over Draft", "Credit History", "Average Credit Balance", "Housing", "Purpose", "Job", "Other Payment Plans", "Employment", "Property Magnitude"];
+
 $.getJSON( "/data", function( data ) {
 
 var treeData = data;
 
-
-// ************** Generate the tree diagram	 *****************
 var margin = {top: 20, right: 120, bottom: 20, left: 120},
 	width = 1960 - margin.right - margin.left,
 	height = 600 - margin.top - margin.bottom;
@@ -54,9 +54,17 @@ function update(source) {
 
   nodeEnter.append("circle")
 	  .attr("r", function(d) { return 5+0.05*(d.percentage[0]+d.percentage[1])})
-	  .style("fill", function(d) { return colorbrewer.RdBu[10][Math.round((10*d.percentage[1])/(d.percentage[0]+d.percentage[1]))];})
+	  .style("fill", function(d) { 
+			return colorbrewer.RdBu[9][Math.round((9*d.percentage[0])/(d.percentage[0]+d.percentage[1]))];
+		})
 	  //.style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; })
 		.on("mouseover", function(d,i){
+			$("#attribute-card").html((d.value.length == 0 ? "Root" : attributes[d.value.length-1])+"<hr/>");
+			$("#value-card").html(d.value[d.value.length-1]);
+			$("#fraud-card").html(d.percentage[1]);
+			$("#good-card").html(d.percentage[0]);
+			$("#total-card").html(d.percentage[0]+d.percentage[1]);
+			$("#current-values").val(d.value.join(","));
 			if (!(d.parent && d.parent.children && d.parent.children.length < 15)){
 				visibleTextId = d.id;
 				update(d);
@@ -70,12 +78,11 @@ function update(source) {
 		});
 
 	 nodeEnter.append("text")
-	  .attr("x", function(d) { return d.children || d._children ? -13 : 13; })
+	  .attr("x", function(d) { return d.children || d._children ? -25 : 13; })
 	  .attr("dy", ".35em")
 	  .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
 	  .text(function(d) { return d.name; })
 	  .style("fill-opacity", 1e-6)
-
 
   // Transition nodes to their new position.
   var nodeUpdate = node.transition()
@@ -85,9 +92,8 @@ function update(source) {
   nodeUpdate.select("circle")
 	  .attr("r", function(d) { return 5+0.05*(d.percentage[0]+d.percentage[1])})
 	  .style("fill", function(d) { 
-			console.log((d.percentage[1])/(d.percentage[0]+d.percentage[1]))
-			return colorbrewer.RdBu[10][10 -Math.round((20*d.percentage[1])/(d.percentage[0]+d.percentage[1]))];
-			})
+			return colorbrewer.RdBu[9][Math.round((9*d.percentage[0])/(d.percentage[0]+d.percentage[1]))];
+		});
 	  //.style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
 
   nodeUpdate.select("text")
@@ -152,3 +158,36 @@ function click(d) {
 }
 
 });
+
+function deepSearch(){
+	$.getJSON( "/match?q="+$("#current-values").val(), function( data ) {
+		console.log(data.data[0]);
+  var table = document.createElement('table');
+	table.className = "table table-striped";
+  var tableBody = document.createElement('tbody');
+
+  var row = document.createElement('tr');
+	attributes.forEach(function(element) {
+      var cell = document.createElement('th');
+      cell.appendChild(document.createTextNode(element));
+			row.appendChild(cell);
+	});
+  tableBody.appendChild(row);
+
+  data.data.forEach(function(rowData) {
+    var row = document.createElement('tr');
+
+    rowData.forEach(function(cellData) {
+      var cell = document.createElement('td');
+      cell.appendChild(document.createTextNode(cellData));
+      row.appendChild(cell);
+    });
+
+    tableBody.appendChild(row);
+  });
+
+  table.appendChild(tableBody);
+  document.getElementById("modal_body").appendChild(table);
+  	$('.modal').modal();
+	});
+}
